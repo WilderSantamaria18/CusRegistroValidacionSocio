@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Solicita tu membresía en el Club Náutico Neptuno de forma rápida y segura.">
+    <title>Club Náutico Neptuno — Registro de Socios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/neptuno.css}">
+</head>
+<body>
+<div class="split-wrapper">
+
+    <!-- ══ PANEL IZQUIERDO ══ -->
+    <div class="panel-left">
+
+        <div class="brand-row">
+            <svg class="brand-anchor" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="6" r="3.5" stroke="#4ec9e4" stroke-width="1.8"/>
+                <line x1="16" y1="9.5" x2="16" y2="28" stroke="#4ec9e4" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M8 18 C8 25 24 25 24 18" stroke="#4ec9e4" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="5" y1="13.5" x2="27" y2="13.5" stroke="#4ec9e4" stroke-width="1.4" stroke-linecap="round" opacity=".5"/>
+                <circle cx="5" cy="28" r="2.4" stroke="#4ec9e4" stroke-width="1.5"/>
+                <circle cx="27" cy="28" r="2.4" stroke="#4ec9e4" stroke-width="1.5"/>
+            </svg>
+            <div>
+                <div class="brand-name">Club Náutico Neptuno</div>
+                <span class="brand-sub">Sistema de Registro Oficial</span>
+            </div>
+        </div>
+
+        <div class="left-body">
+            <div class="left-icon-circle">
+                <svg viewBox="0 0 34 34">
+                    <path d="M17 4 L17 30 M4 17 L30 17" stroke="#4ec9e4" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M8 10 C8 20 26 20 26 10" stroke="#4ec9e4" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <div class="left-overline">Membresía · Portal</div>
+            <h1 class="left-title">Únete al<br><em>Club Náutico</em><br>Neptuno</h1>
+            <div class="left-divider"></div>
+            <p class="left-desc">
+                Completa tu solicitud en línea. Nuestro equipo revisará tu información y te notificará en un plazo de 48 horas hábiles.
+            </p>
+
+            <ul class="benefit-list">
+                <li>
+                    <div class="benefit-check">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+                    </div>
+                    Proceso 100% en línea, sin fila ni trámites presenciales
+                </li>
+                <li>
+                    <div class="benefit-check">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+                    </div>
+                    Validación automática de identidad con tu DNI
+                </li>
+                <li>
+                    <div class="benefit-check">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+                    </div>
+                    Recibes un código de seguimiento al enviar tu solicitud
+                </li>
+            </ul>
+        </div>
+
+        <svg class="left-wave" viewBox="0 0 800 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,50 C150,90 350,10 500,50 C650,90 750,20 800,50 L800,100 L0,100 Z" fill="#4ec9e4"/>
+        </svg>
+
+        <div class="left-copy">© 2025 Club Náutico Neptuno — Sistema Interno v1.0</div>
+    </div>
+
+    <!-- ══ PANEL DERECHO ══ -->
+    <div class="panel-right">
+        <div class="welcome-card">
+            <div class="page-tag">Paso 1 de 1</div>
+            <h2>Registrarse como socio</h2>
+            <p class="desc">
+                Completa el formulario con tus datos personales para solicitar tu admisión. La información será verificada antes de asignarte una membresía.
+            </p>
+
+            <ul class="benefit-list" style="margin-bottom: 36px;">
+                <li>
+                    <div class="benefit-check" style="background:rgba(0,148,188,.1); border-color:rgba(0,148,188,.2);">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="#0094bc"/></svg>
+                    </div>
+                    <span style="color:#3a4a5e;">Nombres y apellidos completos</span>
+                </li>
+                <li>
+                    <div class="benefit-check" style="background:rgba(0,148,188,.1); border-color:rgba(0,148,188,.2);">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="#0094bc"/></svg>
+                    </div>
+                    <span style="color:#3a4a5e;">DNI, correo electrónico y teléfono</span>
+                </li>
+                <li>
+                    <div class="benefit-check" style="background:rgba(0,148,188,.1); border-color:rgba(0,148,188,.2);">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="#0094bc"/></svg>
+                    </div>
+                    <span style="color:#3a4a5e;">Adjuntar DNI escaneado y foto carnet</span>
+                </li>
+            </ul>
+
+            <a id="btn-iniciar" href="/registro" class="btn-submit" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:10px;">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Iniciar Registro
+            </a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

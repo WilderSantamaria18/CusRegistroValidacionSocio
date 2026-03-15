@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Membresía — Club Náutico Neptuno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/neptuno.css}">
+</head>
+<body>
+<div class="split-wrapper">
+
+    <!-- ══ SIDEBAR ══ -->
+    <aside class="panel-left">
+
+        <div class="brand-row">
+            <svg class="brand-anchor" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="6" r="3.5" stroke="#4ec9e4" stroke-width="1.8"/>
+                <line x1="16" y1="9.5" x2="16" y2="28" stroke="#4ec9e4" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M8 18 C8 25 24 25 24 18" stroke="#4ec9e4" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="5" y1="13.5" x2="27" y2="13.5" stroke="#4ec9e4" stroke-width="1.4" stroke-linecap="round" opacity=".5"/>
+                <circle cx="5" cy="28" r="2.4" stroke="#4ec9e4" stroke-width="1.5"/>
+                <circle cx="27" cy="28" r="2.4" stroke="#4ec9e4" stroke-width="1.5"/>
+            </svg>
+            <div>
+                <div class="brand-name">Club Náutico Neptuno</div>
+                <span class="brand-sub">Solicitud de Membresía</span>
+            </div>
+        </div>
+
+        <p class="step-nav-title">Secciones del formulario</p>
+
+        <ul class="step-nav" id="stepNav">
+            <li class="active" data-sec="sec-tipo">
+                <div class="step-num">1</div>
+                <span class="step-lbl">Tipo de socio</span>
+            </li>
+            <li data-sec="sec-personal">
+                <div class="step-num">2</div>
+                <span class="step-lbl">Datos personales</span>
+            </li>
+            <li data-sec="sec-contacto">
+                <div class="step-num">3</div>
+                <span class="step-lbl">Contacto y dirección</span>
+            </li>
+            <li data-sec="sec-documentos">
+                <div class="step-num">4</div>
+                <span class="step-lbl">Documentos adjuntos</span>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <p>
+                Todos los datos serán tratados con confidencialidad conforme al reglamento del club.<br><br>
+                <a href="/">← Volver al inicio</a>
+            </p>
+        </div>
+
+        <svg class="left-wave" viewBox="0 0 800 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,50 C150,90 350,10 500,50 C650,90 750,20 800,50 L800,100 L0,100 Z" fill="#4ec9e4"/>
+        </svg>
+
+    </aside>
+
+    <!-- ══ FORMULARIO ══ -->
+    <main class="main-area">
+
+        <!-- Barra superior -->
+        <div class="topbar">
+            <div class="breadcrumb">
+                <a href="/" style="color:inherit;text-decoration:none;">Neptuno</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-current">Solicitud de Membresía</span>
+            </div>
+            <div class="progress-row">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="progress-pct" id="progressPct">0%</span>
+            </div>
+        </div>
+
+        <div class="content-wrap">
+
+            <!-- Encabezado -->
+            <div class="page-heading">
+                <div class="page-tag">Formulario de Registro</div>
+                <h1 class="page-title">Datos del Postulante</h1>
+                <p class="page-desc">Complete los campos obligatorios marcados con <strong>*</strong>. Su solicitud quedará en estado <strong>Pendiente de validación</strong> hasta ser procesada.</p>
+            </div>
+
+            <!-- ─── FA2: DNI o correo ya registrado ─── -->
+            <div th:if="${errorDuplicado}" class="alert alert-warn">
+                <svg viewBox="0 0 20 20"><path d="M10 2L19 18H1L10 2z"/><line x1="10" y1="8" x2="10" y2="13"/><circle cx="10" cy="15.5" r=".5" fill="currentColor"/></svg>
+                <div>
+                    <strong>Ya existe un registro con este DNI o correo.</strong><br>
+                    <span th:text="${errorDuplicado}"></span>
+                </div>
+            </div>
+
+
+
+            <!-- ─── FA3: Error de servidor genérico ─── -->
+            <div th:if="${error != null and errorDuplicado == null}" class="alert alert-error">
+                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="11"/><circle cx="10" cy="14.5" r=".5" fill="currentColor"/></svg>
+                <div>
+                    <strong>Error al enviar la solicitud.</strong><br>
+                    <span th:text="${error}">Intente nuevamente más tarde.</span>
+                </div>
+            </div>
+
+            <!-- ─── Info general ─── -->
+            <div class="alert alert-info">
+                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><line x1="10" y1="9" x2="10" y2="14"/><circle cx="10" cy="7" r=".5" fill="currentColor"/></svg>
+                <span>Recibirá un <strong>código de seguimiento</strong> al enviar su solicitud. Guárdelo para consultar el estado de su admisión.</span>
+            </div>
+
+            <!-- ═══════════════ FORMULARIO ═══════════════ -->
+            <form th:action="@{/registro/guardar}" th:object="${registroDTO}" method="post"
+                  id="formRegistro" novalidate enctype="multipart/form-data">
+
+                <!-- ─── FA1: Campos incompletos (validación Spring) ─── -->
+                <div th:if="${#fields.hasAnyErrors()}" class="alert alert-error">
+                    <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="11"/><circle cx="10" cy="14.5" r=".5" fill="currentColor"/></svg>
+                    <div>
+                        <strong>Corrija los errores antes de continuar.</strong><br>
+                        Verifique los campos marcados en rojo.
+                    </div>
+                </div>
+
+                <!-- ─── §1 Tipo de socio ─── -->
+                <section class="form-section" id="sec-tipo">
+                    <div class="sec-head">Tipo de Socio<div class="sec-line"></div></div>
+
+                    <!-- Área de interés en el club -->
+                    <div class="fg">
+                        <label>Área de interés <span class="req">*</span></label>
+                        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">
+                            Indique en qué área del club desea participar. Esto orienta su proceso de admisión.
+                        </p>
+                        <div class="type-grid">
+                            <div>
+                                <input type="radio" id="interes-nautico" name="tipoInteres" value="NAUTICO"
+                                       th:checked="${registroDTO.tipoInteres == 'NAUTICO'}" required>
+                                <label for="interes-nautico" class="type-card">
+                                    <div class="type-radio"></div>
+                                    <div>
+                                        <div class="type-label">
+                                            <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M3 17l1-4h16l1 4H3z"/><path d="M5 13V7l7-3 7 3v6"/></svg>
+                                            Área Náutica
+                                        </div>
+                                        <span class="type-sub">Embarcaciones, remo, vela, pesca deportiva</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="interes-instalaciones" name="tipoInteres" value="INSTALACIONES"
+                                       th:checked="${registroDTO.tipoInteres == 'INSTALACIONES' or registroDTO.tipoInteres == null}">
+                                <label for="interes-instalaciones" class="type-card">
+                                    <div class="type-radio"></div>
+                                    <div>
+                                        <div class="type-label">
+                                            <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                            Instalaciones
+                                        </div>
+                                        <span class="type-sub">Piscinas, restaurante, zonas sociales, deportes</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ─── §2 Datos personales ─── -->
+                <section class="form-section" id="sec-personal">
+                    <div class="sec-head">Datos personales<div class="sec-line"></div></div>
+
+                    <div class="frow frow-2">
+                        <div class="fg">
+                            <label for="dni">DNI <span class="req">*</span></label>
+                            <input type="text" id="dni" th:field="*{dni}"
+                                   class="fi" th:classappend="${#fields.hasErrors('dni')} ? ' fi-error'"
+                                   placeholder="12345678" maxlength="8" autocomplete="off">
+                            <span class="field-err" th:if="${#fields.hasErrors('dni')}" th:errors="*{dni}"></span>
+                        </div>
+                        <div class="fg">
+                            <label for="fechaNacimiento">Fecha de nacimiento <span class="opt">(opcional)</span></label>
+                            <input type="date" id="fechaNacimiento" th:field="*{fechaNacimiento}" class="fi">
+                        </div>
+                    </div>
+
+                    <div class="frow frow-2">
+                        <div class="fg">
+                            <label for="nombre">Nombres <span class="req">*</span></label>
+                            <input type="text" id="nombre" th:field="*{nombre}"
+                                   class="fi" th:classappend="${#fields.hasErrors('nombre')} ? ' fi-error'"
+                                   placeholder="Ej: Juan Carlos">
+                            <span class="field-err" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
+                        </div>
+                        <div class="fg">
+                            <label for="apellido">Apellidos <span class="req">*</span></label>
+                            <input type="text" id="apellido" th:field="*{apellido}"
+                                   class="fi" th:classappend="${#fields.hasErrors('apellido')} ? ' fi-error'"
+                                   placeholder="Ej: Pérez García">
+                            <span class="field-err" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ─── §3 Contacto y dirección ─── -->
+                <section class="form-section" id="sec-contacto">
+                    <div class="sec-head">Contacto y dirección<div class="sec-line"></div></div>
+
+                    <div class="frow frow-2">
+                        <div class="fg">
+                            <label for="correo">Correo electrónico <span class="req">*</span></label>
+                            <input type="email" id="correo" th:field="*{correo}"
+                                   class="fi" th:classappend="${#fields.hasErrors('correo')} ? ' fi-error'"
+                                   placeholder="nombre@correo.com">
+                            <span class="field-err" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></span>
+                        </div>
+                        <div class="fg">
+                            <label for="telefono">Teléfono <span class="req">*</span></label>
+                            <input type="tel" id="telefono" th:field="*{telefono}"
+                                   class="fi" th:classappend="${#fields.hasErrors('telefono')} ? ' fi-error'"
+                                   placeholder="987 654 321">
+                            <span class="field-err" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></span>
+                        </div>
+                    </div>
+
+                    <div class="frow frow-1">
+                        <div class="fg">
+                            <label for="direccion">Dirección <span class="req">*</span></label>
+                            <input type="text" id="direccion" th:field="*{direccion}"
+                                   class="fi" th:classappend="${#fields.hasErrors('direccion')} ? ' fi-error'"
+                                   placeholder="Calle, número, piso o referencia">
+                            <span class="field-err" th:if="${#fields.hasErrors('direccion')}" th:errors="*{direccion}"></span>
+                        </div>
+                    </div>
+
+                    <div class="frow frow-2">
+                        <div class="fg">
+                            <label for="ciudad">Ciudad <span class="req">*</span></label>
+                            <input type="text" id="ciudad" th:field="*{ciudad}"
+                                   class="fi" th:classappend="${#fields.hasErrors('ciudad')} ? ' fi-error'"
+                                   placeholder="Lima">
+                            <span class="field-err" th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></span>
+                        </div>
+                        <div class="fg">
+                            <label for="codigoPostal">Código postal <span class="opt">(opcional)</span></label>
+                            <input type="text" id="codigoPostal" th:field="*{codigoPostal}" class="fi" placeholder="15046">
+                        </div>
+                    </div>
+                </section>
+
+
+
+                <!-- ─── §5 Documentos ─── -->
+                <section class="form-section" id="sec-documentos">
+                    <div class="sec-head">Documentos adjuntos<div class="sec-line"></div></div>
+
+                    <div class="alert alert-info" style="margin-bottom:18px;">
+                        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><line x1="10" y1="9" x2="10" y2="14"/><circle cx="10" cy="7" r=".5" fill="currentColor"/></svg>
+                        <span>Formatos aceptados: <strong>PDF, JPG, PNG</strong> — Tamaño máximo: <strong>5 MB</strong> por archivo.</span>
+                    </div>
+
+                    <div class="frow frow-2">
+                        <!-- DNI escaneado -->
+                        <div class="fg">
+                            <label>DNI escaneado</label>
+                            <div class="upload-zone" id="zoneDni">
+                                <input type="file" id="archivoDni" name="documentosDNI" accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="upload-icon">
+                                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                </div>
+                                <div class="upload-primary">Seleccionar archivo</div>
+                                <div class="upload-secondary">o arrastrar aquí</div>
+                                <div class="upload-filename" id="nameDni"></div>
+                            </div>
+                        </div>
+
+                        <!-- Foto carnet -->
+                        <div class="fg">
+                            <label>Foto tamaño carnet</label>
+                            <div class="upload-zone" id="zoneFoto">
+                                <input type="file" id="archivoFoto" name="documentosFoto" accept=".jpg,.jpeg,.png">
+                                <div class="upload-icon">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                </div>
+                                <div class="upload-primary">Seleccionar foto</div>
+                                <div class="upload-secondary">JPG o PNG · máx. 5 MB</div>
+                                <div class="upload-filename" id="nameFoto"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ─── Términos ─── -->
+                <div class="frow frow-1" style="margin-bottom:22px;">
+                    <div class="cb-row">
+                        <input type="checkbox" id="terminos" name="terminos" class="cb-input" required>
+                        <label for="terminos" class="cb-text">
+                            Declaro que los datos ingresados son verídicos y acepto los
+                            <a href="#" target="_blank">términos y condiciones</a> del Club Náutico Neptuno
+                            y su <a href="#" target="_blank">política de privacidad</a>.
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── Botón enviar ─── -->
+                <button type="submit" id="btnEnviar" class="btn-submit" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                    Enviar solicitud
+                </button>
+
+                <a href="/" class="link-back">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    Volver al inicio
+                </a>
+
+            </form>
+        </div><!-- /content-wrap -->
+    </main>
+
+</div><!-- /split-wrapper -->
+
+<script th:src="@{/js/registro.js}"></script>
+</body>
+</html>
