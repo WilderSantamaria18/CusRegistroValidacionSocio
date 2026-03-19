@@ -1,4 +1,4 @@
-package com.idat.pe.Cus_Registro_Postulante.model;
+package com.idat.pe.Cus_Registro_Postulante.entity;
 
 /**
  * Define el área de interés del postulante dentro del Club Náutico Neptuno.

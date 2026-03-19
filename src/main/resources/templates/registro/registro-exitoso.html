@@ -68,39 +68,38 @@
             <div class="alert alert-ok" style="margin-bottom:20px;">
                 <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><polyline points="6,10 9,13 14,7"/></svg>
                 <div>
-                    Su número de seguimiento es:
-                    <span class="tracking-code" style="display:inline-block; font-weight:600; color:#4ec9e4; font:monospace; margin-left:8px;" th:text="'#' + ${postulante.id ?: 'N/A'}">#0000</span>
+                        <span class="tracking-code" style="display:inline-block; font-weight:600; color:#4ec9e4; font-family:monospace; margin-left:8px;" th:text="'#' + ${postulante.id}">#0000</span>
                 </div>
             </div>
 
             <!-- Mensaje de confirmación -->
             <div class="alert alert-info" style="margin-bottom:20px;">
                 <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><line x1="10" y1="9" x2="10" y2="14"/><circle cx="10" cy="7" r=".5" fill="currentColor"/></svg>
-                <span th:text="${postulante.mensaje ?: 'Solicitud de registro enviada exitosamente'}">Solicitud enviada exitosamente</span>
+                <span>Solicitud de registro enviada exitosamente.</span>
             </div>
 
             <!-- Datos del postulante -->
             <div class="data-card">
                 <div class="data-card-head">Datos registrados</div>
                 <div class="data-row">
-                    <span class="data-key">DNI</span>
-                    <span class="data-val" th:text="${postulante.dni ?: '—'}">—</span>
+                    <span class="data-key" th:text="${postulante.tipoDocumento}">DNI</span>
+                    <span class="data-val" th:text="${postulante.numeroDocumento}">—</span>
                 </div>
-                <div class="data-row">
+                <div class="data-row" th:if="${postulante.tipoDocumento == 'DNI'}">
                     <span class="data-key">Nombre completo</span>
-                    <span class="data-val" th:text="${postulante.nombre} + ' ' + ${postulante.apellido} ?: '—'">—</span>
+                    <span class="data-val" th:text="${postulante.nombres} + ' ' + ${postulante.apellidoPaterno}">—</span>
+                </div>
+                <div class="data-row" th:if="${postulante.tipoDocumento == 'RUC'}">
+                    <span class="data-key">Razón Social</span>
+                    <span class="data-val" th:text="${postulante.razonSocial}">—</span>
                 </div>
                 <div class="data-row">
                     <span class="data-key">Correo electrónico</span>
-                    <span class="data-val" th:text="${postulante.correo ?: '—'}">—</span>
+                    <span class="data-val" th:text="${postulante.correo}">—</span>
                 </div>
                 <div class="data-row">
                     <span class="data-key">Estado</span>
-                    <span class="badge-pending" th:text="${postulante.estado ?: 'PENDIENTE'}">PENDIENTE</span>
-                </div>
-                <div class="data-row" th:if="${postulante.validacion != null}">
-                    <span class="data-key">Validación</span>
-                    <span class="data-val" th:text="${postulante.validacion}">—</span>
+                    <span class="badge-pending" th:text="${postulante.estado}">PENDIENTE</span>
                 </div>
             </div>
 

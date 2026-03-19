@@ -7,46 +7,32 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class RegistroPostulanteDTO {
 
-    // ── Obligatorios ──────────────────────────────────────────────────────────
+    @NotBlank(message = "El tipo de documento es obligatorio")
+    private String tipoDocumento; // DNI, RUC
 
-    @NotBlank(message = "El DNI es obligatorio")
-    @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos")
-    private String dni;
+    @NotBlank(message = "El número de documento es obligatorio")
+    @Size(min = 8, max = 11, message = "El número de documento debe tener entre 8 y 11 caracteres")
+    private String numeroDocumento;
 
-    @NotBlank(message = "El nombre es obligatorio")
+    // Persona Natural (si tipoDocumento es DNI)
     private String nombre;
+    private String apellidoPaterno;
+    private String apellidoMaterno;
 
-    @NotBlank(message = "El apellido es obligatorio")
-    private String apellido;
+    // Persona Jurídica (si tipoDocumento es RUC)
+    private String razonSocial;
 
+    @Email(message = "Formato de correo inválido")
     @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
     private String correo;
 
-    @NotBlank(message = "El teléfono es obligatorio")
     private String telefono;
-
-    @NotBlank(message = "La dirección es obligatoria")
     private String direccion;
-
-    @NotBlank(message = "La ciudad es obligatoria")
-    private String ciudad;
-
-    /**
-     * Área de interés en el club:
-     * NAUTICO       → orientado a actividades náuticas / embarcaciones
-     * INSTALACIONES → orientado al uso de piscinas, restaurante, zonas sociales
-     */
-    @NotBlank(message = "Seleccione un área de interés")
-    private String tipoInteres = "INSTALACIONES";
-
-    // ── Opcionales ────────────────────────────────────────────────────────────
-
+    private Integer idCiudad;
     private LocalDate fechaNacimiento;
-
+    private String tipoInteres;
     private String codigoPostal;
-
-    private String departamento;
 }

@@ -1,66 +1,65 @@
 package com.idat.pe.Cus_Registro_Postulante.controller;
 
+import com.idat.pe.Cus_Registro_Postulante.dto.PostulanteDTO;
 import com.idat.pe.Cus_Registro_Postulante.dto.RegistroPostulanteDTO;
+import com.idat.pe.Cus_Registro_Postulante.genericResponse.GenericResponse;
 import com.idat.pe.Cus_Registro_Postulante.service.PostulanteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/registro")
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/postulantes")
 public class RegistroPostulanteController {
 
     @Autowired
     private PostulanteService postulanteService;
 
-    /**
-     * GET /registro — Muestra el formulario de registro (Flujo principal: paso 2)
-     */
-    @GetMapping("")
-    public String mostrarFormulario(Model model) {
-        model.addAttribute("registroDTO", new RegistroPostulanteDTO());
-        return "registro/formulario-registro";
+    @PostMapping("/registrar")
+    public ResponseEntity<GenericResponse<String, PostulanteDTO>> registrar(@Valid @RequestBody RegistroPostulanteDTO dto) {
+        PostulanteDTO response = postulanteService.registrarPostulante(dto);
+        return ResponseEntity.ok(GenericResponse.<String, PostulanteDTO>builder()
+                .message("Postulante registrado con éxito")
+                .body(response)
+                .build());
     }
 
-    /**
-     * POST /registro/guardar — Procesa el formulario (Flujo principal: pasos 4-7)
-     *
-     * FA1: BindingResult con errores → volvemos al formulario con mensajes de validación.
-     * FA2: DNI o correo duplicado  → model attribute "errorDuplicado" para banner amarillo.
-     * FA3: Error inesperado        → model attribute "error" para banner rojo genérico.
-     */
-    @PostMapping("/guardar")
-    public String guardarRegistro(
-            @Valid @ModelAttribute("registroDTO") RegistroPostulanteDTO registroDTO,
-            BindingResult result,
-            Model model) {
+    @GetMapping("/listar")
+    public ResponseEntity<GenericResponse<String, List<PostulanteDTO>>> listar() {
+        List<PostulanteDTO> list = postulanteService.listarPostulantes();
+        return ResponseEntity.ok(GenericResponse.<String, List<PostulanteDTO>>builder()
+                .message("Lista de postulantes obtenida")
+                .body(list)
+                .build());
+    }
 
-        // FA1 — Campos obligatorios incompletos o con formato incorrecto
-        if (result.hasErrors()) {
-            return "registro/formulario-registro";
-        }
+    @GetMapping("/{id}")
+    public ResponseEntity<GenericResponse<String, PostulanteDTO>> buscar(@PathVariable Integer id) {
+        PostulanteDTO response = postulanteService.buscarPorId(id);
+        return ResponseEntity.ok(GenericResponse.<String, PostulanteDTO>builder()
+                .message("Postulante encontrado")
+                .body(response)
+                .build());
+    }
 
-        try {
-            var postulante = postulanteService.registrarPostulante(registroDTO);
-            model.addAttribute("postulante", postulante);
-            return "registro/registro-exitoso";
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<GenericResponse<String, PostulanteDTO>> actualizar(@PathVariable Integer id, @Valid @RequestBody RegistroPostulanteDTO dto) {
+        PostulanteDTO response = postulanteService.actualizarDatos(id, dto);
+        return ResponseEntity.ok(GenericResponse.<String, PostulanteDTO>builder()
+                .message("Datos actualizados con éxito")
+                .body(response)
+                .build());
+    }
 
-        } catch (RuntimeException e) {
-            String msg = e.getMessage() != null ? e.getMessage() : "";
-
-            // FA2 — DNI o correo ya registrado: lanza mensaje con "DNI" o "correo"
-            if (msg.toLowerCase().contains("dni") || msg.toLowerCase().contains("correo")) {
-                model.addAttribute("errorDuplicado", msg +
-                        " Si ya registró una solicitud, puede consultar su estado con su código de seguimiento.");
-            } else {
-                // FA3 — Error genérico de servidor o red
-                model.addAttribute("error", "Error al enviar la solicitud. Intente nuevamente más tarde.");
-            }
-
-            return "registro/formulario-registro";
-        }
+    @PatchMapping("/cambiar-estado/{id}")
+    public ResponseEntity<GenericResponse<String, PostulanteDTO>> cambiarEstado(@PathVariable Integer id, @RequestParam String nuevoEstado) {
+        PostulanteDTO response = postulanteService.cambiarEstado(id, nuevoEstado);
+        return ResponseEntity.ok(GenericResponse.<String, PostulanteDTO>builder()
+                .message("Estado actualizado con éxito")
+                .body(response)
+                .build());
     }
 }
