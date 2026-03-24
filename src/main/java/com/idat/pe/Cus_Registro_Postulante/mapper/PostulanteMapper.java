@@ -21,15 +21,21 @@ public class PostulanteMapper {
 
         TipoDocumento tipo = TipoDocumento.valueOf(dto.getTipoDocumento());
         
-        // Resolver idUbicacion basado en datos geográficos si no está proporcionado directamente
-        Integer idUbicacion = dto.getIdUbicacion();
-        if (idUbicacion == null && dto.getDistrito() != null && !dto.getDistrito().trim().isEmpty()) {
-            idUbicacion = ubicacionRepository.findDistritoByFullPath(
-                    dto.getPais() != null ? dto.getPais() : "Perú",
-                    dto.getDepartamento() != null ? dto.getDepartamento() : "",
-                    dto.getProvincia() != null ? dto.getProvincia() : "",
-                    dto.getDistrito()
-            ).map(u -> u.getId()).orElse(null);
+        // Resolver idUbicacion basado en datos geográficos
+        Integer idUbicacion = null;
+        if (dto.getDistrito() != null && !dto.getDistrito().trim().isEmpty()) {
+            String pais = normalizarTexto(dto.getPais() != null ? dto.getPais() : "Perú");
+            String departamento = normalizarTexto(dto.getDepartamento() != null ? dto.getDepartamento() : "");
+            String provincia = normalizarTexto(dto.getProvincia() != null ? dto.getProvincia() : "");
+            String distrito = normalizarTexto(dto.getDistrito());
+            
+            try {
+                idUbicacion = ubicacionRepository.findDistritoByFullPath(pais, departamento, provincia, distrito)
+                        .map(u -> u.getId()).orElse(null);
+            } catch (Exception e) {
+                // Si hay error en la búsqueda, dejar idUbicacion como null
+                idUbicacion = null;
+            }
         }
         
         Postulante.PostulanteBuilder builder = Postulante.builder()
@@ -63,6 +69,18 @@ public class PostulanteMapper {
 
     private String blankToNull(String s) {
         return (s == null || s.trim().isEmpty()) ? null : s;
+    }
+
+    private String normalizarTexto(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return "";
+        }
+        // Capitalizar primera letra
+        String normalizado = texto.trim();
+        if (normalizado.length() > 0) {
+            normalizado = normalizado.substring(0, 1).toUpperCase() + normalizado.substring(1).toLowerCase();
+        }
+        return normalizado;
     }
 
     public PostulanteDTO toDTO(Postulante entity) {

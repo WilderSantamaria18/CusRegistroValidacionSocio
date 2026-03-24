@@ -535,7 +535,7 @@
                 this.showModal({ 
                     title: "Campo Necesario", 
                     text: `Debes ingresar el número de ${tipo.toUpperCase()} para realizar la validación.`, 
-                    type: "confirm" // Use confirm icon for warning
+                    type: "confirm"
                 });
                 return;
             }
@@ -544,11 +544,26 @@
             this.btnValidar.disabled = true;
 
             try {
-                const response = await fetch(this.jsonUrl);
+                console.log(`Validando ${tipo} ${numero}...`);
+                console.log(`URL: ${this.jsonUrl}`);
+                
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000); // Timeout de 8 segundos
+
+                const response = await fetch(this.jsonUrl, { signal: controller.signal });
+                clearTimeout(timeout);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
+                console.log("Datos recibidos:", data);
+
                 const record = data[tipo]?.find(item => item.numero_documento === numero);
 
                 if (record) {
+                    console.log("Registro encontrado:", record);
                     this.fillForm(record, tipo);
                     this.showModal({ 
                         title: "¡Datos Encontrados!", 
@@ -556,15 +571,28 @@
                         type: "alert" 
                     });
                 } else {
+                    console.warn(`No se encontró registro para ${tipo} ${numero}`);
                     this.showModal({ 
                         title: "Sin Resultados", 
-                        text: `No pudimos localizar un registro vinculado al ${tipo.toUpperCase()} ${numero}.`, 
+                        text: `No pudimos localizar un registro vinculado al ${tipo.toUpperCase()} ${numero}.\n\nPuedes completar los datos manualmente.`, 
                         type: "error" 
                     });
                 }
             } catch (error) {
-                console.error("Error:", error);
-                this.showModal({ title: "Error de Conexión", text: "No se pudo establecer contacto con el servicio de validación.", type: "error" });
+                console.error("Error en validación:", error.message, error);
+                
+                let mensajeError = "No se pudo establecer contacto con el servicio de validación.";
+                if (error.name === 'AbortError') {
+                    mensajeError = "La solicitud tardó demasiado. Por favor, intenta de nuevo.";
+                } else if (error instanceof TypeError) {
+                    mensajeError = "Error de conexión. Verifica tu conexión a Internet.";
+                }
+                
+                this.showModal({ 
+                    title: "Error de Conexión", 
+                    text: mensajeError + "\n\nPuedes completar los datos manualmente.",
+                    type: "error" 
+                });
             } finally {
                 this.btnValidar.innerText = "Validar";
                 this.btnValidar.disabled = false;
@@ -589,13 +617,20 @@
             this.fields.direccion.value = data.direccion || "";
             this.fields.codigoPostal.value = data.codigo_postal || "";
 
-            // Para ubicación, ahora usamos los selectores dinámicos
+            // Llenar campos de ubicación (readonly)
             if (data.ubicacion_geografica) {
-                // Llenar los campos ocultos
-                document.getElementById('hiddenPais').value = data.ubicacion_geografica.pais || "";
-                document.getElementById('hiddenDepartamento').value = data.ubicacion_geografica.departamento || "";
-                document.getElementById('hiddenProvincia').value = data.ubicacion_geografica.provincia || "";
-                document.getElementById('hiddenDistrito').value = data.ubicacion_geografica.distrito || "";
+                this.fields.pais.value = data.ubicacion_geografica.pais || "";
+                this.fields.departamento.value = data.ubicacion_geografica.departamento || "";
+                this.fields.provincia.value = data.ubicacion_geografica.provincia || "";
+                this.fields.distrito.value = data.ubicacion_geografica.distrito || "";
+            }
+            
+            // Llenar tipo de interés
+            if (data.tipo_interes) {
+                const tipoInteresField = document.querySelector('[name="tipoInteres"]');
+                if (tipoInteresField) {
+                    tipoInteresField.value = data.tipo_interes || "";
+                }
             }
         }
     }
