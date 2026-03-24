@@ -51,13 +51,31 @@ public class DeudaExternaServiceImpl implements DeudaExternaService {
      */
     @Override
     public List<DeudaExternaDTO> obtenerDeudasPorPostulante(Integer idPostulante) {
-        logger.info("Obteniendo deudas de la BD para postulante ID: {}", idPostulante);
+        try {
+            logger.info("         🔍 Buscando deudas para postulante ID: {}", idPostulante);
 
-        List<DeudaExterna> deudas = deudaExternaRepository.findByIdPostulante(idPostulante);
+            List<DeudaExterna> deudas = deudaExternaRepository.findByIdPostulante(idPostulante);
+            logger.info("         ✓ Query ejecutada exitosamente");
+            logger.info("         📊 Deudas encontradas: {}", deudas.size());
 
-        return deudas.stream()
-                .map(this::mapearDTO)
-                .collect(Collectors.toList());
+            if (deudas.isEmpty()) {
+                logger.info("         ⚠️  Sin deudas registradas para postulante {}", idPostulante);
+                return List.of();
+            }
+
+            List<DeudaExternaDTO> dtos = deudas.stream()
+                    .peek(d -> logger.info("            • Deuda: {} - {} - Monto: {}", 
+                        d.getId(), d.getNombreClubOrigen(), d.getMontoDeuda()))
+                    .map(this::mapearDTO)
+                    .collect(Collectors.toList());
+            
+            logger.info("         ✅ {} DTOs creados", dtos.size());
+            return dtos;
+            
+        } catch (Exception e) {
+            logger.error("         ❌ ERROR al obtener deudas para postulante ID: {}", idPostulante, e);
+            throw new RuntimeException("Error al obtener deudas: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -88,38 +106,46 @@ public class DeudaExternaServiceImpl implements DeudaExternaService {
 
     @Override
     public String clasificarPostulante(List<DeudaExternaDTO> deudas) {
-        logger.info("Clasificando postulante con {} deudas", deudas == null ? 0 : deudas.size());
+        try {
+            logger.info("         🏷️  Clasificando postulante con {} deudas", deudas == null ? 0 : deudas.size());
 
-        if (deudas == null || deudas.isEmpty()) {
-            logger.info("Clasificación: Socio Pagador (Sin deudas)");
+            if (deudas == null || deudas.isEmpty()) {
+                logger.info("         ✓ Clasificación: SOCIO PAGADOR (Sin deudas)");
+                return "Socio Pagador";
+            }
+
+            // Verificar si hay deudas vencidas o pendientes sin pagar
+            boolean tieneVencida = deudas.stream()
+                    .anyMatch(d -> "vencido".equalsIgnoreCase(d.getEstado()));
+
+            boolean tienePendiente = deudas.stream()
+                    .anyMatch(d -> "pendiente".equalsIgnoreCase(d.getEstado()));
+
+            // Verificar si hay deudas pagadas (historial de pagos)
+            boolean tienePagada = deudas.stream()
+                    .anyMatch(d -> "pagado".equalsIgnoreCase(d.getEstado()));
+
+            logger.info("         📊 Análisis: vencidas={}, pendientes={}, pagadas={}", tieneVencida, tienePendiente, tienePagada);
+
+            // Renuente: tiene pendientes o vencidas sin resolver
+            if (tieneVencida || tienePendiente) {
+                logger.info("         ✓ Clasificación: SOCIO RENUENTE A PAGO (Tiene deudas pendientes/vencidas)");
+                return "Socio Renuente a Pago";
+            }
+
+            // Pagador esporádico: todas sus deudas están pagadas (tiene historial pero pagó)
+            if (tienePagada) {
+                logger.info("         ✓ Clasificación: SOCIO PAGADOR ESPORÁDICO (Historial de pagos)");
+                return "Socio Pagador Esporádico";
+            }
+
+            logger.info("         ✓ Clasificación: SOCIO PAGADOR (Sin deudas activas)");
             return "Socio Pagador";
+            
+        } catch (Exception e) {
+            logger.error("         ❌ ERROR en clasificarPostulante", e);
+            return "Clasificación Pendiente";
         }
-
-        // Verificar si hay deudas vencidas o pendientes sin pagar
-        boolean tieneVencida = deudas.stream()
-                .anyMatch(d -> "vencido".equalsIgnoreCase(d.getEstado()));
-
-        boolean tienePendiente = deudas.stream()
-                .anyMatch(d -> "pendiente".equalsIgnoreCase(d.getEstado()));
-
-        // Verificar si hay deudas pagadas (historial de pagos)
-        boolean tienePagada = deudas.stream()
-                .anyMatch(d -> "pagado".equalsIgnoreCase(d.getEstado()));
-
-        // Renuente: tiene pendientes o vencidas sin resolver
-        if (tieneVencida || tienePendiente) {
-            logger.info("Clasificación: Socio Renuente a Pago (Tiene deudas pendientes o vencidas)");
-            return "Socio Renuente a Pago";
-        }
-
-        // Pagador esporádico: todas sus deudas están pagadas (tiene historial pero pagó)
-        if (tienePagada) {
-            logger.info("Clasificación: Socio Pagador Esporádico (Tiene deudas pagadas)");
-            return "Socio Pagador Esporádico";
-        }
-
-        logger.info("Clasificación: Socio Pagador");
-        return "Socio Pagador";
     }
 
     // =====================================================

@@ -141,14 +141,40 @@ public class PostulanteServiceImpl implements PostulanteService {
     @Override
     @Transactional(readOnly = true)
     public List<PostulanteConDeudasDTO> obtenerPostulantesPendientesConDeudas() {
-        logger.info("Obteniendo postulantes pendientes/subsanados con deudas");
-        
-        List<Postulante> postulantes = postulanteRepository.findByEstado(EstadoPostulante.PENDIENTE);
-        postulantes.addAll(postulanteRepository.findByEstado(EstadoPostulante.SUBSANADO));
-        
-        return postulantes.stream()
-                .map(this::construirPostulanteConDeudas)
-                .collect(Collectors.toList());
+        try {
+            logger.info("==================== INICIANDO CARGA DE POSTULANTES PENDIENTES ====================");
+            
+            logger.info("1️⃣  Buscando postulantes PENDIENTE...");
+            List<Postulante> postulantes = postulanteRepository.findByEstado(EstadoPostulante.PENDIENTE);
+            logger.info("   ✓ Encontrados {} postulantes PENDIENTE", postulantes.size());
+            
+            logger.info("2️⃣  Buscando postulantes SUBSANADO...");
+            List<Postulante> subsanados = postulanteRepository.findByEstado(EstadoPostulante.SUBSANADO);
+            logger.info("   ✓ Encontrados {} postulantes SUBSANADO", subsanados.size());
+            
+            postulantes.addAll(subsanados);
+            logger.info("3️⃣  Total de postulantes a procesar: {}", postulantes.size());
+
+            if (postulantes.isEmpty()) {
+                logger.warn("⚠️  NO hay postulantes pendientes o subsanados");
+                return List.of();
+            }
+
+            logger.info("4️⃣  Construyendo DTOs para {} postulantes...", postulantes.size());
+            List<PostulanteConDeudasDTO> resultado = postulantes.stream()
+                    .peek(p -> logger.info("   • Procesando postulante: {} {}", p.getId(), p.getNumeroDocumento()))
+                    .map(this::construirPostulanteConDeudas)
+                    .collect(Collectors.toList());
+            
+            logger.info("✅ RESULTADO: {} postulantes con deudas", resultado.size());
+            logger.info("==================== CARGA DE POSTULANTES COMPLETADA ====================\n");
+            
+            return resultado;
+            
+        } catch (Exception e) {
+            logger.error("❌ ERROR CRÍTICO EN obtenerPostulantesPendientesConDeudas", e);
+            throw new RuntimeException("Error al obtener postulantes: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -294,30 +320,43 @@ public class PostulanteServiceImpl implements PostulanteService {
      * Aplica SOLID: Reutilización de lógica
      */
     private PostulanteConDeudasDTO construirPostulanteConDeudas(Postulante postulante) {
-        // Bug 2 fix: consultar deudas en BD local por idPostulante
-        List<DeudaExternaDTO> deudas = deudaExternaService.obtenerDeudasPorPostulante(
-                postulante.getId()
-        );
-        
-        String clasificacion = deudaExternaService.clasificarPostulante(deudas);
-        
-        return PostulanteConDeudasDTO.builder()
-                .idPostulante(postulante.getId())
-                .tipoDocumento(postulante.getTipoDocumento().toString())
-                .numeroDocumento(postulante.getNumeroDocumento())
-                .nombres(postulante.getNombres())
-                .apellidoPaterno(postulante.getApellidoPaterno())
-                .apellidoMaterno(postulante.getApellidoMaterno())
-                .razonSocial(postulante.getRazonSocial())
-                .correoElectronico(postulante.getCorreoElectronico())
-                .telefono(postulante.getTelefono())
-                .direccion(postulante.getDireccion())
-                .fechaNacimiento(postulante.getFechaNacimiento())
-                .tipoInteres(postulante.getTipoInteres())
-                .fechaRegistro(postulante.getFechaRegistro())
-                .estadoPostulacion(postulante.getEstado().toString())
-                .deudas(deudas)
-                .clasificacion(clasificacion)
-                .build();
+        try {
+            logger.info("   📌 Construyendo DTO para postulante ID: {}", postulante.getId());
+            
+            // Bug 2 fix: consultar deudas en BD local por idPostulante
+            logger.info("      🔍 Buscando deudas en BD local...");
+            List<DeudaExternaDTO> deudas = deudaExternaService.obtenerDeudasPorPostulante(postulante.getId());
+            logger.info("      ✓ Deudas encontradas: {}", deudas.size());
+            
+            logger.info("      🏷️  Clasificando postulante...");
+            String clasificacion = deudaExternaService.clasificarPostulante(deudas);
+            logger.info("      ✓ Clasificación: {}", clasificacion);
+            
+            PostulanteConDeudasDTO dto = PostulanteConDeudasDTO.builder()
+                    .idPostulante(postulante.getId())
+                    .tipoDocumento(postulante.getTipoDocumento().toString())
+                    .numeroDocumento(postulante.getNumeroDocumento())
+                    .nombres(postulante.getNombres())
+                    .apellidoPaterno(postulante.getApellidoPaterno())
+                    .apellidoMaterno(postulante.getApellidoMaterno())
+                    .razonSocial(postulante.getRazonSocial())
+                    .correoElectronico(postulante.getCorreoElectronico())
+                    .telefono(postulante.getTelefono())
+                    .direccion(postulante.getDireccion())
+                    .fechaNacimiento(postulante.getFechaNacimiento())
+                    .tipoInteres(postulante.getTipoInteres())
+                    .fechaRegistro(postulante.getFechaRegistro())
+                    .estadoPostulacion(postulante.getEstado().toString())
+                    .deudas(deudas)
+                    .clasificacion(clasificacion)
+                    .build();
+            
+            logger.info("      ✅ DTO construido exitosamente");
+            return dto;
+            
+        } catch (Exception e) {
+            logger.error("❌ ERROR construyendo DTO para postulante ID: {}", postulante.getId(), e);
+            throw new RuntimeException("Error construyendo DTO para postulante " + postulante.getId() + ": " + e.getMessage(), e);
+        }
     }
 }
