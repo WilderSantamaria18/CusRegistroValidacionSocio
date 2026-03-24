@@ -41,8 +41,8 @@ public class Postulante {
     private String telefono;
     private String direccion;
 
-    @Column(name = "id_ciudad")
-    private Integer idCiudad;
+    @Column(name = "id_ubicacion")
+    private Integer idUbicacion;
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;

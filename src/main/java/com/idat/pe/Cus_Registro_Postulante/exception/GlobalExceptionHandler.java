@@ -6,12 +6,40 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<GenericResponse<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String mensaje = "Error en los datos enviados";
+        
+        if (ex.getMessage().contains("Duplicate entry")) {
+            mensaje = "Este documento o correo ya se encuentra registrado";
+        } else if (ex.getMessage().contains("foreign key")) {
+            mensaje = "Referencia de datos inválida";
+        }
+        
+        GenericResponse<String, String> response = GenericResponse.<String, String>builder()
+                .message(mensaje)
+                .body(null)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<GenericResponse<String, String>> handleDataAccessException(DataAccessException ex) {
+        GenericResponse<String, String> response = GenericResponse.<String, String>builder()
+                .message("Error al acceder a la base de datos. Por favor, intente más tarde.")
+                .body(null)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<GenericResponse<String, String>> handleRuntimeException(RuntimeException ex) {

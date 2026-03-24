@@ -31,7 +31,7 @@ public class RegistroPostulanteDTO {
 
     private String telefono;
     private String direccion;
-    private Integer idCiudad;
+    private Integer idUbicacion;
     private LocalDate fechaNacimiento;
     private String tipoInteres;
     private String codigoPostal;

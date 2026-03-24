@@ -96,7 +96,7 @@ public class PostulanteServiceImpl implements PostulanteService {
         postulante.setCorreoElectronico(dto.getCorreo());
         postulante.setTelefono(dto.getTelefono());
         postulante.setDireccion(dto.getDireccion());
-        postulante.setIdCiudad(dto.getIdCiudad());
+        postulante.setIdUbicacion(dto.getIdUbicacion());
         postulante.setTipoInteres(dto.getTipoInteres());
         postulante.setCodigoPostal(dto.getCodigoPostal());
 
