@@ -49,6 +49,9 @@ public class PostulanteServiceImpl implements PostulanteService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private UbicacionGeograficaService ubicacionService;
+
     // =====================================================
     // MÉTODOS BÁSICOS
     // =====================================================
@@ -56,16 +59,65 @@ public class PostulanteServiceImpl implements PostulanteService {
     @Override
     @Transactional
     public PostulanteDTO registrarPostulante(RegistroPostulanteDTO dto) {
-        if (postulanteRepository.findByNumeroDocumento(dto.getNumeroDocumento()).isPresent()) {
-            throw new RuntimeException("El documento " + dto.getNumeroDocumento() + " ya se encuentra registrado.");
+        try {
+            logger.info("\n========== REGISTRANDO NUEVO POSTULANTE ==========");
+            
+            // 1. Validar documento único
+            logger.info("1️⃣  Validando documento único: {}", dto.getNumeroDocumento());
+            if (postulanteRepository.findByNumeroDocumento(dto.getNumeroDocumento()).isPresent()) {
+                throw new RuntimeException("El documento " + dto.getNumeroDocumento() + " ya se encuentra registrado.");
+            }
+            logger.info("   ✓ Documento válido");
+            
+            // 2. Validar email único
+            logger.info("2️⃣  Validando email único: {}", dto.getCorreo());
+            if (postulanteRepository.findByCorreoElectronico(dto.getCorreo()).isPresent()) {
+                throw new RuntimeException("El correo " + dto.getCorreo() + " ya se encuentra registrado.");
+            }
+            logger.info("   ✓ Email válido");
+            
+            // 3. Procesar ubicación geográfica
+            logger.info("3️⃣  Procesando ubicación geográfica");
+            Integer idUbicacion = null;
+            
+            if (dto.getPais() != null && !dto.getPais().isEmpty() &&
+                dto.getDepartamento() != null && !dto.getDepartamento().isEmpty() &&
+                dto.getProvincia() != null && !dto.getProvincia().isEmpty() &&
+                dto.getDistrito() != null && !dto.getDistrito().isEmpty()) {
+                
+                logger.info("   📍 Buscando/creando ubicación: {}/{}/{}/{}", 
+                    dto.getPais(), dto.getDepartamento(), dto.getProvincia(), dto.getDistrito());
+                
+                idUbicacion = ubicacionService.obtenerOCrearUbicacion(
+                    dto.getPais(),
+                    dto.getDepartamento(),
+                    dto.getProvincia(),
+                    dto.getDistrito()
+                );
+                
+                logger.info("   ✓ Ubicación procesada - ID: {}", idUbicacion);
+                dto.setIdUbicacion(idUbicacion);
+            } else {
+                logger.warn("   ⚠️  Ubicación incompleta - se registrará sin ubicación");
+            }
+            
+            // 4. Crear entidad postulante
+            logger.info("4️⃣  Creando entidad postulante");
+            Postulante postulante = postulanteMapper.toEntity(dto);
+            logger.info("   ✓ Entidad creada");
+            
+            // 5. Guardar postulante
+            logger.info("5️⃣  Guardando postulante en BD");
+            Postulante guardado = postulanteRepository.save(postulante);
+            logger.info("   ✓ Postulante guardado - ID: {}", guardado.getId());
+            
+            logger.info("========== REGISTRO COMPLETADO EXITOSAMENTE ==========\n");
+            return postulanteMapper.toDTO(guardado);
+            
+        } catch (Exception e) {
+            logger.error("❌ ERROR al registrar postulante", e);
+            throw new RuntimeException("Error al registrar postulante: " + e.getMessage(), e);
         }
-        if (postulanteRepository.findByCorreoElectronico(dto.getCorreo()).isPresent()) {
-            throw new RuntimeException("El correo " + dto.getCorreo() + " ya se encuentra registrado.");
-        }
-
-        Postulante postulante = postulanteMapper.toEntity(dto);
-        Postulante guardado = postulanteRepository.save(postulante);
-        return postulanteMapper.toDTO(guardado);
     }
 
     @Override
