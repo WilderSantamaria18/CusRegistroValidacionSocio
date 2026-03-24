@@ -579,39 +579,69 @@
             this.btnValidar.disabled = true;
 
             try {
-                console.log(`Validando ${tipo} ${numero}...`);
-                console.log(`URL: ${this.jsonUrl}`);
+                console.log(`\n🔍 INICIANDO VALIDACIÓN`);
+                console.log(`📋 Tipo: ${tipo}`);
+                console.log(`🔢 Número: ${numero}`);
+                console.log(`🌐 URL: ${this.jsonUrl}`);
                 
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 8000); // Timeout de 8 segundos
+                const timeout = setTimeout(() => controller.abort(), 8000);
 
+                console.log("📤 Enviando fetch...");
                 const response = await fetch(this.jsonUrl, { signal: controller.signal });
                 clearTimeout(timeout);
+
+                console.log(`✓ Response Status: ${response.status}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const data = await response.json();
-                console.log("Datos recibidos (estructura):", {
-                    keys: Object.keys(data),
-                    tiposDisponibles: Object.keys(data).filter(k => Array.isArray(data[k]))
-                });
+                console.log("\n📥 JSON RECIBIDO:");
+                console.log("  • Keys principales:", Object.keys(data));
+                
+                // Inspeccionar estructura del JSON
+                console.log("\n📊 ESTRUCTURA JSON:");
+                for (const key of Object.keys(data)) {
+                    if (Array.isArray(data[key])) {
+                        console.log(`  • ${key} (array): ${data[key].length} elementos`);
+                        if (data[key].length > 0) {
+                            console.log(`    - Keys del primer elemento:`, Object.keys(data[key][0]));
+                            if (data[key][0].ubicacion_geografica) {
+                                console.log(`    - ubicacion_geografica:`, data[key][0].ubicacion_geografica);
+                            }
+                        }
+                    }
+                }
 
                 // Buscar el registro
                 const recordsArray = data[tipo];
                 if (!recordsArray || !Array.isArray(recordsArray)) {
-                    console.error(`No existe array para tipo: ${tipo}`);
-                    throw new Error(`No se encontró información para ${tipo.toUpperCase()}`);
+                    console.error(`❌ No existe array para tipo: ${tipo}`);
+                    console.log(`   Tipos disponibles: ${Object.keys(data).filter(k => Array.isArray(data[k])).join(', ')}`);
+                    throw new Error(`Tipo de documento no encontrado: ${tipo}`);
                 }
 
-                const record = recordsArray.find(item => item && item.numero_documento === numero);
+                console.log(`\n🔎 Buscando en ${recordsArray.length} registros de ${tipo}...`);
+                
+                const record = recordsArray.find(item => {
+                    if (!item) return false;
+                    const match = item.numero_documento === numero;
+                    if (match) {
+                        console.log(`✓ Registro encontrado:`);
+                        console.log(`  • numero_documento: ${item.numero_documento}`);
+                        console.log(`  • keys disponibles: ${Object.keys(item).join(', ')}`);
+                        if (item.ubicacion_geografica) {
+                            console.log(`  • ubicacion_geografica: ${JSON.stringify(item.ubicacion_geografica)}`);
+                        }
+                    }
+                    return match;
+                });
 
                 if (record) {
-                    console.log("Registro encontrado:", {
-                        numeroDocumento: record.numero_documento,
-                        keys: Object.keys(record)
-                    });
+                    console.log("\n✅ REGISTRO COMPLETAMENTE ENCONTRADO");
+                    console.log("📌 Llamando fillForm(record, tipo)...");
                     this.fillForm(record, tipo);
                     this.showModal({ 
                         title: "¡Datos Encontrados!", 
@@ -619,11 +649,15 @@
                         type: "alert" 
                     });
                 } else {
-                    console.warn(`No se encontró registro para ${tipo} ${numero}`);
+                    console.warn(`\n❌ No se encontró registro para ${tipo} ${numero}`);
+                    console.log(`   Números disponibles en ${tipo}:`, recordsArray.map(r => r?.numero_documento).filter(Boolean));
                     throw new Error(`Registro no encontrado`);
                 }
             } catch (error) {
-                console.error("Error en validación:", error.message, error);
+                console.error("\n❌ ERROR EN VALIDACIÓN:");
+                console.error("Message:", error.message);
+                console.error("Name:", error.name);
+                console.error("Stack:", error.stack);
                 
                 let mensajeError = "No se pudo establecer contacto con el servicio de validación.";
                 if (error.name === 'AbortError') {
@@ -635,9 +669,9 @@
                 }
                 
                 this.showModal({ 
-                    title: "Validación", 
-                    text: mensajeError + "\n\nPuedes completar los datos manualmente.",
-                    type: "info" 
+                    title: "Error de Validación", 
+                    text: mensajeError + "\n\nVerifica la consola (F12) para más detalles.",
+                    type: "error" 
                 });
             } finally {
                 this.btnValidar.innerText = "Validar";
@@ -652,71 +686,102 @@
                     return;
                 }
 
-                console.log("=== INICIANDO FILL FORM ===");
-                console.log("Tipo:", type);
-                console.log("Data disponible:", !!data);
-                console.log("Has ubicacion_geografica:", !!data.ubicacion_geografica);
+                console.log("\n📋 === LLENANDO FORMULARIO ===");
+                console.log("Tipo de documento:", type);
+                console.log("Data completa:", JSON.stringify(data, null, 2));
                 
                 // Llenar datos personales según tipo de documento
+                console.log("\n👤 Llenando datos personales...");
                 if (type === 'dni') {
+                    console.log("  Detectado: DNI");
                     this.setFieldValue('nombre', data.nombres);
                     this.setFieldValue('apellidoPaterno', data.apellido_paterno);
                     this.setFieldValue('apellidoMaterno', data.apellido_materno);
                     this.setFieldValue('fechaNacimiento', data.fecha_nacimiento);
-                    console.log("Campos DNI llenados");
                 } else if (type === 'ruc') {
+                    console.log("  Detectado: RUC");
                     this.setFieldValue('razonSocial', data.razon_social);
                     this.clearFieldValue('nombre');
                     this.clearFieldValue('apellidoPaterno');
                     this.clearFieldValue('apellidoMaterno');
-                    console.log("Campos RUC llenados");
                 }
 
                 // Llenar datos comunes
+                console.log("\n📧 Llenando contacto...");
                 this.setFieldValue('correo', data.correo_electronico);
                 this.setFieldValue('telefono', data.telefono);
                 this.setFieldValue('direccion', data.direccion);
                 this.setFieldValue('codigoPostal', data.codigo_postal);
 
                 // Llenar campos de ubicación (readonly) - directo por ID
-                if (data.ubicacion_geografica && typeof data.ubicacion_geografica === 'object') {
-                    console.log("Llenando ubicación");
-                    this.setFieldValueById('pais', data.ubicacion_geografica.pais);
-                    this.setFieldValueById('departamento', data.ubicacion_geografica.departamento);
-                    this.setFieldValueById('provincia', data.ubicacion_geografica.provincia);
-                    this.setFieldValueById('distrito', data.ubicacion_geografica.distrito);
+                console.log("\n🗺️ Procesando ubicación geográfica...");
+                console.log("  ubicacion_geografica existe:", !!data.ubicacion_geografica);
+                console.log("  tipo:", typeof data.ubicacion_geografica);
+                
+                if (data.ubicacion_geografica) {
+                    if (typeof data.ubicacion_geografica === 'object') {
+                        const ub = data.ubicacion_geografica;
+                        console.log("  Contenido ubicacion_geografica:", JSON.stringify(ub));
+                        console.log("  Keys:", Object.keys(ub));
+                        
+                        // Intentar llenar con diferentes nombres de propiedades posibles
+                        const pais = ub.pais || ub.Pais || ub.PAIS || "";
+                        const dept = ub.departamento || ub.Departamento || ub.DEPARTAMENTO || "";
+                        const prov = ub.provincia || ub.Provincia || ub.PROVINCIA || "";
+                        const dist = ub.distrito || ub.Distrito || ub.DISTRITO || "";
+                        
+                        console.log("  Valores extraídos:");
+                        console.log(`    - Pais: "${pais}"`);
+                        console.log(`    - Departamento: "${dept}"`);
+                        console.log(`    - Provincia: "${prov}"`);
+                        console.log(`    - Distrito: "${dist}"`);
+                        
+                        this.setFieldValueById('pais', pais);
+                        this.setFieldValueById('departamento', dept);
+                        this.setFieldValueById('provincia', prov);
+                        this.setFieldValueById('distrito', dist);
+                    } else {
+                        console.warn("⚠️ ubicacion_geografica no es un objeto:", data.ubicacion_geografica);
+                    }
                 } else {
-                    console.warn("⚠️ ubicacion_geografica no disponible o no es objeto");
+                    console.warn("⚠️ ubicacion_geografica NO existe en data");
                 }
                 
                 // Llenar tipo de interés - directo por ID
+                console.log("\n⚓ Procesando tipo de interés...");
+                console.log("  tipo_interes existe:", !!data.tipo_interes);
+                
                 if (data.tipo_interes) {
-                    console.log("Llenando tipo_interes:", data.tipo_interes);
+                    console.log("  Valor:", data.tipo_interes);
                     this.setFieldValueById('tipoInteres', data.tipo_interes);
                 } else {
-                    console.warn("⚠️ tipo_interes no disponible");
+                    console.warn("⚠️ tipo_interes NO existe en data");
                 }
 
-                console.log("✅ Formulario completado");
+                console.log("\n✅ LLENADO DE FORMULARIO COMPLETADO\n");
             } catch (error) {
-                console.error("❌ Error al completar formulario:", error.message);
+                console.error("\n❌ ERROR CRÍTICO EN fillForm:");
+                console.error("Message:", error.message);
                 console.error("Stack:", error.stack);
+                console.error("Error completo:", error);
             }
         }
 
         setFieldValue(fieldName, value) {
             try {
                 const field = this.fields[fieldName];
-                if (field && field instanceof HTMLElement) {
-                    field.value = value || "";
-                    console.log(`  ✓ ${fieldName} = "${value || ''}"`);
-                } else if (!field) {
-                    console.warn(`  ⚠️ Campo ${fieldName} es null/undefined`);
-                } else {
-                    console.warn(`  ⚠️ Campo ${fieldName} no es HTMLElement:`, typeof field);
+                if (!field) {
+                    console.warn(`    ⚠️ Campo not found in this.fields: ${fieldName}`);
+                    return;
                 }
+                if (!(field instanceof HTMLElement)) {
+                    console.warn(`    ⚠️ ${fieldName} is not HTMLElement - type: ${typeof field}`);
+                    return;
+                }
+                field.value = value || "";
+                console.log(`    ✓ ${fieldName}: "${value || '(vacío)'}"`);
             } catch (error) {
-                console.error(`  ✗ Error en setFieldValue(${fieldName}):`, error.message);
+                console.error(`    ✗ Error setFieldValue(${fieldName}):`, error.message);
             }
         }
 
@@ -725,26 +790,30 @@
                 const field = this.fields[fieldName];
                 if (field && field instanceof HTMLElement) {
                     field.value = "";
-                    console.log(`  ✓ ${fieldName} limpiado`);
+                    console.log(`    ✓ ${fieldName}: limpiado`);
                 }
             } catch (error) {
-                console.error(`  ✗ Error en clearFieldValue(${fieldName}):`, error.message);
+                console.error(`    ✗ Error clearFieldValue(${fieldName}):`, error.message);
             }
         }
 
         setFieldValueById(elementId, value) {
             try {
                 const element = document.getElementById(elementId);
-                if (element && element instanceof HTMLElement) {
-                    element.value = value || "";
-                    console.log(`  ✓ #${elementId} = "${value || ''}"`);
-                } else if (!element) {
-                    console.warn(`  ⚠️ Elemento #${elementId} no existe en DOM`);
-                } else {
-                    console.warn(`  ⚠️ #${elementId} no es HTMLElement:`, typeof element);
+                if (!element) {
+                    console.warn(`    ⚠️ Elemento #${elementId} no existe en el DOM`);
+                    return false;
                 }
+                if (!(element instanceof HTMLElement)) {
+                    console.warn(`    ⚠️ #${elementId} no es HTMLElement - type: ${typeof element}`);
+                    return false;
+                }
+                element.value = value || "";
+                console.log(`    ✓ #${elementId}: "${value || '(vacío)'}"`);
+                return true;
             } catch (error) {
-                console.error(`  ✗ Error en setFieldValueById(${elementId}):`, error.message);
+                console.error(`    ✗ Error setFieldValueById(#${elementId}):`, error.message);
+                return false;
             }
         }
     }
