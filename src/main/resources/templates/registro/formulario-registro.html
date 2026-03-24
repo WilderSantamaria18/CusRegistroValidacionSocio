@@ -214,24 +214,39 @@
                     <!-- ─── Ubicación Geográfica ─── -->
                     <div class="frow frow-2">
                         <div class="fg">
-                            <label>País</label>
-                            <input type="text" th:field="*{pais}" class="fi" placeholder="Perú">
+                            <label>País <span class="req">*</span></label>
+                            <select id="selectPais" class="fi" required>
+                                <option value="">Seleccionar país</option>
+                            </select>
                         </div>
                         <div class="fg">
-                            <label>Departamento</label>
-                            <input type="text" th:field="*{departamento}" class="fi" placeholder="Lima">
+                            <label>Departamento <span class="req">*</span></label>
+                            <select id="selectDepartamento" class="fi" required disabled>
+                                <option value="">Seleccionar departamento</option>
+                            </select>
                         </div>
                     </div>
                     <div class="frow frow-2">
                         <div class="fg">
-                            <label>Provincia</label>
-                            <input type="text" th:field="*{provincia}" class="fi" placeholder="Lima">
+                            <label>Provincia <span class="req">*</span></label>
+                            <select id="selectProvincia" class="fi" required disabled>
+                                <option value="">Seleccionar provincia</option>
+                            </select>
                         </div>
                         <div class="fg">
-                            <label>Distrito</label>
-                            <input type="text" th:field="*{distrito}" class="fi" placeholder="Miraflores">
+                            <label>Distrito <span class="req">*</span></label>
+                            <select id="selectDistrito" class="fi" required disabled>
+                                <option value="">Seleccionar distrito</option>
+                            </select>
                         </div>
                     </div>
+                    
+                    <!-- Campos ocultos para enviar con el formulario -->
+                    <input type="hidden" th:field="*{pais}" id="hiddenPais" value="">
+                    <input type="hidden" th:field="*{departamento}" id="hiddenDepartamento" value="">
+                    <input type="hidden" th:field="*{provincia}" id="hiddenProvincia" value="">
+                    <input type="hidden" th:field="*{distrito}" id="hiddenDistrito" value="">
+                    <input type="hidden" th:field="*{idUbicacion}" id="hiddenIdUbicacion" value="">
                 </div>
 
                 <div class="cb-row" style="margin: 20px 0;">
@@ -586,16 +601,21 @@
             this.fields.direccion.value = data.direccion || "";
             this.fields.codigoPostal.value = data.codigo_postal || "";
 
+            // Para ubicación, ahora usamos los selectores dinámicos
             if (data.ubicacion_geografica) {
-                this.fields.pais.value = data.ubicacion_geografica.pais || "";
-                this.fields.departamento.value = data.ubicacion_geografica.departamento || "";
-                this.fields.provincia.value = data.ubicacion_geografica.provincia || "";
-                this.fields.distrito.value = data.ubicacion_geografica.distrito || "";
+                // Llenar los campos ocultos
+                document.getElementById('hiddenPais').value = data.ubicacion_geografica.pais || "";
+                document.getElementById('hiddenDepartamento').value = data.ubicacion_geografica.departamento || "";
+                document.getElementById('hiddenProvincia').value = data.ubicacion_geografica.provincia || "";
+                document.getElementById('hiddenDistrito').value = data.ubicacion_geografica.distrito || "";
             }
         }
     }
 
     document.addEventListener('DOMContentLoaded', () => new RegistrationManager());
 </script>
+
+<!-- Script para carga dinámica de ubicaciones -->
+<script th:src="@{/js/ubicaciones.js}"></script>
 </body>
 </html>
