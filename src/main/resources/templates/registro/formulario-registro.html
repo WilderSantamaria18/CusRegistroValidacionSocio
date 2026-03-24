@@ -660,18 +660,23 @@
                 console.error("Stack:", error.stack);
                 
                 let mensajeError = "No se pudo establecer contacto con el servicio de validación.";
+                let tituloModal = "Error de Validación";
+                let tipoModal = "error";
+                
                 if (error.name === 'AbortError') {
                     mensajeError = "La solicitud tardó demasiado. Por favor, intenta de nuevo.";
                 } else if (error instanceof TypeError) {
                     mensajeError = "Error de conexión. Verifica tu conexión a Internet.";
                 } else if (error.message.includes("no encontrado")) {
-                    mensajeError = "No se encontró un registro con estos datos. Puedes completar manualmente.";
+                    tituloModal = "Registro No Encontrado";
+                    mensajeError = "Regístrese como nuevo postulante. Puede completar el formulario manualmente.";
+                    tipoModal = "info";
                 }
                 
                 this.showModal({ 
-                    title: "Error de Validación", 
+                    title: tituloModal, 
                     text: mensajeError + "\n\nVerifica la consola (F12) para más detalles.",
-                    type: "error" 
+                    type: tipoModal 
                 });
             } finally {
                 this.btnValidar.innerText = "Validar";
