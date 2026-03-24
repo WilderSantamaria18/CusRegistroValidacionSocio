@@ -67,21 +67,48 @@ async function cargarPostulantes() {
     const container = document.getElementById('postulantesLista');
 
     try {
+        console.log("📌 INICIANDO CARGA DE POSTULANTES");
+        console.log(`🔗 URL: ${API_BASE}/postulantes`);
+        console.log(`🔑 Token disponible: ${!!token}`);
+        
         const res = await fetch(`${API_BASE}/postulantes`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
 
-        if (!res.ok) throw new Error('Error al cargar postulantes');
+        console.log(`📊 Response Status: ${res.status}`);
+        console.log(`✓ Response OK: ${res.ok}`);
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            console.error("❌ Error Response:", errorData);
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
 
         const data = await res.json();
+        console.log("📥 JSON RECIBIDO:");
+        console.log("  Keys:", Object.keys(data));
+        console.log("  Body type:", Array.isArray(data.body) ? `Array (${data.body.length} elementos)` : typeof data.body);
+        
+        if (data.body && Array.isArray(data.body)) {
+            console.log("  Primer postulante:", data.body[0] || "ninguno");
+        }
+        
         todosPostulantes = data.body || [];
+        console.log(`✅ Postulantes cargados: ${todosPostulantes.length}`);
         renderizarSidebar(todosPostulantes);
 
     } catch (err) {
-        console.error(err);
+        console.error("❌ ERROR CRÍTICO al cargar postulantes:");
+        console.error("Message:", err.message);
+        console.error("Stack:", err.stack);
+        
         container.innerHTML = `
-            <p style="text-align:center;color:rgba(255,255,255,0.45);padding:20px;font-size:13px;">
-                ⚠️ Error al cargar postulantes
+            <p style="text-align:center;color:rgba(255,255,255,0.6);padding:20px;font-size:13px;line-height:1.6;">
+                ⚠️ Error al cargar postulantes<br>
+                <small>${err.message}</small>
             </p>`;
     }
 }
@@ -133,51 +160,104 @@ async function seleccionarPostulante(idPostulante, elemento) {
     const token = localStorage.getItem('jwt_token');
 
     try {
+        console.log("\n👤 SELECCIONANDO POSTULANTE");
+        console.log(`📌 ID: ${idPostulante}`);
+        
         // 1. Obtener datos del postulante desde la BD local
+        console.log(`🔗 Buscando: ${API_BASE}/postulantes/${idPostulante}`);
         const res = await fetch(`${API_BASE}/postulantes/${idPostulante}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error('Postulante no encontrado');
+        
+        console.log(`📊 Response Status: ${res.status}`);
+        
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'Postulante no encontrado');
+        }
 
         const data = await res.json();
         postulanteActual = data.body;
+        
+        console.log("✅ Postulante encontrado:");
+        console.log(`  Tipo Doc: ${postulanteActual.tipoDocumento}`);
+        console.log(`  Número: ${postulanteActual.numeroDocumento}`);
+        console.log(`  Nombres: ${postulanteActual.nombres}`);
+        console.log(`  Estado: ${postulanteActual.estadoPostulacion}`);
 
         // 2. Obtener deudas del API externo (con cache)
+        console.log("\n💳 Buscando deudas externas...");
         await cargarDeudasExternas();
 
         // 3. Filtrar deudas del postulante actual por numero_documento
-        const registro = deudasExternasAll
-            ? deudasExternasAll.find(r =>
-                  r.numero_documento === postulanteActual.numeroDocumento &&
-                  r.tipo_documento   === postulanteActual.tipoDocumento)
+        console.log(`🔎 Buscando deudas para: ${postulanteActual.numeroDocumento}`);
+        const registro = deudasExternasAll && Array.isArray(deudasExternasAll)
+            ? deudasExternasAll.find(r => {
+                const match = r.numero_documento === postulanteActual.numeroDocumento &&
+                              r.tipo_documento === postulanteActual.tipoDocumento;
+                if (match) {
+                    console.log(`  ✓ Coincidencia encontrada:`, r);
+                }
+                return match;
+            })
             : null;
+
+        if (registro) {
+            console.log(`✅ Registro encontrado con ${registro.deudas ? registro.deudas.length : 0} deudas`);
+        } else {
+            console.log(`⚠️ No se encontraron deudas para este documento`);
+        }
 
         deudasExternas = registro ? registro.deudas : [];
         const clasExtAPI = registro ? mapearClasificacion(registro.clasificacion_sugerida) : null;
 
         // 4. Calcular clasificación (usamos la del API externo si existe, sino la del backend)
         const clasificacion = clasExtAPI || postulanteActual.clasificacion || 'Sin datos';
+        console.log(`🏷️ Clasificación: ${clasificacion}`);
 
         // 5. Renderizar
         renderizarDetalle(clasificacion);
 
     } catch (err) {
-        console.error(err);
+        console.error("❌ ERROR al seleccionar postulante:");
+        console.error("Message:", err.message);
+        console.error("Stack:", err.stack);
         mostrarToast('Error al cargar el postulante: ' + err.message, 'error');
         ocultarDetalle();
     }
 }
 
-/** Carga y cachea el JSON externo */
+/** Carga y cachea el JSON externo de deudas */
 async function cargarDeudasExternas() {
-    if (deudasExternasAll !== null) return; // Ya tenemos cache
+    if (deudasExternasAll !== null) {
+        console.log("✓ Usando cache de deudas externas (ya cargadas previamente)");
+        return; // Ya tenemos cache
+    }
 
     try {
+        console.log("\n🔍 CARGANDO DEUDAS EXTERNAS");
+        console.log(`🌐 URL: ${API_DEUDAS_EXT}`);
+        
         const res = await fetch(API_DEUDAS_EXT);
-        if (!res.ok) throw new Error('API externa no disponible');
+        console.log(`📊 Response Status: ${res.status}`);
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         deudasExternasAll = await res.json();
+        console.log("✅ Deudas externas cargadas:");
+        console.log(`  Type: ${Array.isArray(deudasExternasAll) ? 'Array' : typeof deudasExternasAll}`);
+        if (Array.isArray(deudasExternasAll)) {
+            console.log(`  Total elementos: ${deudasExternasAll.length}`);
+            if (deudasExternasAll.length > 0) {
+                console.log(`  Primer elemento keys: ${Object.keys(deudasExternasAll[0]).join(', ')}`);
+            }
+        }
+        
     } catch (err) {
-        console.warn('No se pudo cargar el API externo de deudas:', err.message);
+        console.warn("⚠️ No se pudo cargar el API externo de deudas:");
+        console.warn("Message:", err.message);
         deudasExternasAll = [];
     }
 }
