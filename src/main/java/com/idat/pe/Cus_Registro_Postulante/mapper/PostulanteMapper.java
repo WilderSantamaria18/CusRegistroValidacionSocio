@@ -5,16 +5,32 @@ import com.idat.pe.Cus_Registro_Postulante.dto.RegistroPostulanteDTO;
 import com.idat.pe.Cus_Registro_Postulante.entity.Postulante;
 import com.idat.pe.Cus_Registro_Postulante.entity.EstadoPostulante;
 import com.idat.pe.Cus_Registro_Postulante.entity.TipoDocumento;
+import com.idat.pe.Cus_Registro_Postulante.repository.UbicacionGeograficaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
 @Component
 public class PostulanteMapper {
 
+    @Autowired
+    private UbicacionGeograficaRepository ubicacionRepository;
+
     public Postulante toEntity(RegistroPostulanteDTO dto) {
         if (dto == null) return null;
 
         TipoDocumento tipo = TipoDocumento.valueOf(dto.getTipoDocumento());
+        
+        // Resolver idUbicacion basado en datos geográficos si no está proporcionado directamente
+        Integer idUbicacion = dto.getIdUbicacion();
+        if (idUbicacion == null && dto.getDistrito() != null && !dto.getDistrito().trim().isEmpty()) {
+            idUbicacion = ubicacionRepository.findDistritoByFullPath(
+                    dto.getPais() != null ? dto.getPais() : "Perú",
+                    dto.getDepartamento() != null ? dto.getDepartamento() : "",
+                    dto.getProvincia() != null ? dto.getProvincia() : "",
+                    dto.getDistrito()
+            ).map(u -> u.getId()).orElse(null);
+        }
         
         Postulante.PostulanteBuilder builder = Postulante.builder()
                 .tipoDocumento(tipo)
@@ -22,7 +38,7 @@ public class PostulanteMapper {
                 .correoElectronico(dto.getCorreo())
                 .telefono(dto.getTelefono())
                 .direccion(dto.getDireccion())
-                .idUbicacion(dto.getIdUbicacion())
+                .idUbicacion(idUbicacion)
                 .tipoInteres(dto.getTipoInteres())
                 .codigoPostal(dto.getCodigoPostal())
                 .fechaRegistro(LocalDate.now())

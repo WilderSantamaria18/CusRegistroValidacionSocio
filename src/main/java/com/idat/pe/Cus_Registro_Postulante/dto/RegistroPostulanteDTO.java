@@ -29,11 +29,19 @@ public class RegistroPostulanteDTO {
     @NotBlank(message = "El correo es obligatorio")
     private String correo;
 
+    @NotBlank(message = "El teléfono es obligatorio")
     private String telefono;
+
+    @NotBlank(message = "La dirección es obligatoria")
     private String direccion;
+
     private Integer idUbicacion;
+
     private LocalDate fechaNacimiento;
+
+    @NotBlank(message = "El tipo de interés es obligatorio")
     private String tipoInteres;
+
     private String codigoPostal;
 
     // Campos de ubicación detallada
