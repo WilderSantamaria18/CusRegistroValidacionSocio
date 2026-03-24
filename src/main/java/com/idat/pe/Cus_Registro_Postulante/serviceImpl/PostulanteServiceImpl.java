@@ -9,6 +9,7 @@ import com.idat.pe.Cus_Registro_Postulante.mapper.PostulanteMapper;
 import com.idat.pe.Cus_Registro_Postulante.repository.*;
 import com.idat.pe.Cus_Registro_Postulante.service.PostulanteService;
 import com.idat.pe.Cus_Registro_Postulante.service.DeudaExternaService;
+import com.idat.pe.Cus_Registro_Postulante.service.UbicacionGeograficaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
