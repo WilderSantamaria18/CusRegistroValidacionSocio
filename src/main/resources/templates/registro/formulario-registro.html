@@ -215,21 +215,21 @@
                     <div class="frow frow-2">
                         <div class="fg">
                             <label>País</label>
-                            <input type="text" th:field="*{pais}" class="fi" placeholder="Perú" id="pais" readonly>
+                            <input type="text" name="pais" id="pais" class="fi" placeholder="Perú" readonly>
                         </div>
                         <div class="fg">
                             <label>Departamento</label>
-                            <input type="text" th:field="*{departamento}" class="fi" placeholder="Lima" id="departamento" readonly>
+                            <input type="text" name="departamento" id="departamento" class="fi" placeholder="Lima" readonly>
                         </div>
                     </div>
                     <div class="frow frow-2">
                         <div class="fg">
                             <label>Provincia</label>
-                            <input type="text" th:field="*{provincia}" class="fi" placeholder="Lima" id="provincia" readonly>
+                            <input type="text" name="provincia" id="provincia" class="fi" placeholder="Lima" readonly>
                         </div>
                         <div class="fg">
                             <label>Distrito</label>
-                            <input type="text" th:field="*{distrito}" class="fi" placeholder="Miraflores" id="distrito" readonly>
+                            <input type="text" name="distrito" id="distrito" class="fi" placeholder="Miraflores" readonly>
                         </div>
                     </div>
                     
@@ -403,10 +403,18 @@
      */
     class RegistrationManager {
         constructor() {
+            console.log("🚀 Inicializando RegistrationManager...");
+            
             this.form = document.getElementById('formRegistro');
             this.tipoDocSelect = document.getElementById('tipoDocSelect');
             this.numeroDocInput = document.getElementById('numeroDocumento');
             this.btnValidar = document.getElementById('btn-validar');
+            
+            // Verificar elementos principales
+            if (!this.form) console.error("❌ formRegistro no encontrado");
+            if (!this.tipoDocSelect) console.error("❌ tipoDocSelect no encontrado");
+            if (!this.numeroDocInput) console.error("❌ numeroDocumento no encontrado");
+            if (!this.btnValidar) console.error("❌ btn-validar no encontrado");
             
             // Modal Elements
             this.modal = document.getElementById('customModal');
@@ -415,25 +423,52 @@
             this.modalText = document.getElementById('modalText');
             this.modalActions = document.getElementById('modalActions');
 
-            // Campos a completar
+            // Campos a completar - validar cada uno
             this.fields = {
-                nombre: document.querySelector('[name="nombre"]'),
-                apellidoPaterno: document.querySelector('[name="apellidoPaterno"]'),
-                apellidoMaterno: document.querySelector('[name="apellidoMaterno"]'),
-                razonSocial: document.querySelector('[name="razonSocial"]'),
-                fechaNacimiento: document.querySelector('[name="fechaNacimiento"]'),
-                correo: document.querySelector('[name="correo"]'),
-                telefono: document.querySelector('[name="telefono"]'),
-                direccion: document.querySelector('[name="direccion"]'),
-                codigoPostal: document.querySelector('[name="codigoPostal"]'),
-                pais: document.querySelector('[name="pais"]'),
-                departamento: document.querySelector('[name="departamento"]'),
-                provincia: document.querySelector('[name="provincia"]'),
-                distrito: document.querySelector('[name="distrito"]')
+                nombre: this.safeGetElement('[name="nombre"]', 'querySelector'),
+                apellidoPaterno: this.safeGetElement('[name="apellidoPaterno"]', 'querySelector'),
+                apellidoMaterno: this.safeGetElement('[name="apellidoMaterno"]', 'querySelector'),
+                razonSocial: this.safeGetElement('[name="razonSocial"]', 'querySelector'),
+                fechaNacimiento: this.safeGetElement('[name="fechaNacimiento"]', 'querySelector'),
+                correo: this.safeGetElement('[name="correo"]', 'querySelector'),
+                telefono: this.safeGetElement('[name="telefono"]', 'querySelector'),
+                direccion: this.safeGetElement('[name="direccion"]', 'querySelector'),
+                codigoPostal: this.safeGetElement('[name="codigoPostal"]', 'querySelector'),
+                pais: this.safeGetElement('pais', 'getElementById'),
+                departamento: this.safeGetElement('departamento', 'getElementById'),
+                provincia: this.safeGetElement('provincia', 'getElementById'),
+                distrito: this.safeGetElement('distrito', 'getElementById'),
+                tipoInteres: this.safeGetElement('tipoInteres', 'getElementById')
             };
 
             this.jsonUrl = 'https://jsonubicaciongeografica.onrender.com/json/documentos';
+            
+            const foundFields = Object.entries(this.fields)
+                .filter(([_, el]) => el !== null)
+                .map(([name]) => name);
+            
+            const missingFields = Object.entries(this.fields)
+                .filter(([_, el]) => el === null)
+                .map(([name]) => name);
+            
+            console.log(`✅ Campos encontrados (${foundFields.length}):`, foundFields.join(', '));
+            if (missingFields.length > 0) {
+                console.warn(`⚠️ Campos faltantes (${missingFields.length}):`, missingFields.join(', '));
+            }
+            
             this.init();
+        }
+
+        safeGetElement(selector, method) {
+            try {
+                const element = method === 'querySelector' 
+                    ? document.querySelector(selector)
+                    : document.getElementById(selector);
+                return element || null;
+            } catch (error) {
+                console.error(`❌ Error buscando ${method}(${selector}):`, error.message);
+                return null;
+            }
         }
 
         init() {
@@ -558,12 +593,25 @@
                 }
 
                 const data = await response.json();
-                console.log("Datos recibidos:", data);
+                console.log("Datos recibidos (estructura):", {
+                    keys: Object.keys(data),
+                    tiposDisponibles: Object.keys(data).filter(k => Array.isArray(data[k]))
+                });
 
-                const record = data[tipo]?.find(item => item.numero_documento === numero);
+                // Buscar el registro
+                const recordsArray = data[tipo];
+                if (!recordsArray || !Array.isArray(recordsArray)) {
+                    console.error(`No existe array para tipo: ${tipo}`);
+                    throw new Error(`No se encontró información para ${tipo.toUpperCase()}`);
+                }
+
+                const record = recordsArray.find(item => item && item.numero_documento === numero);
 
                 if (record) {
-                    console.log("Registro encontrado:", record);
+                    console.log("Registro encontrado:", {
+                        numeroDocumento: record.numero_documento,
+                        keys: Object.keys(record)
+                    });
                     this.fillForm(record, tipo);
                     this.showModal({ 
                         title: "¡Datos Encontrados!", 
@@ -572,11 +620,7 @@
                     });
                 } else {
                     console.warn(`No se encontró registro para ${tipo} ${numero}`);
-                    this.showModal({ 
-                        title: "Sin Resultados", 
-                        text: `No pudimos localizar un registro vinculado al ${tipo.toUpperCase()} ${numero}.\n\nPuedes completar los datos manualmente.`, 
-                        type: "error" 
-                    });
+                    throw new Error(`Registro no encontrado`);
                 }
             } catch (error) {
                 console.error("Error en validación:", error.message, error);
@@ -586,12 +630,14 @@
                     mensajeError = "La solicitud tardó demasiado. Por favor, intenta de nuevo.";
                 } else if (error instanceof TypeError) {
                     mensajeError = "Error de conexión. Verifica tu conexión a Internet.";
+                } else if (error.message.includes("no encontrado")) {
+                    mensajeError = "No se encontró un registro con estos datos. Puedes completar manualmente.";
                 }
                 
                 this.showModal({ 
-                    title: "Error de Conexión", 
+                    title: "Validación", 
                     text: mensajeError + "\n\nPuedes completar los datos manualmente.",
-                    type: "error" 
+                    type: "info" 
                 });
             } finally {
                 this.btnValidar.innerText = "Validar";
@@ -600,37 +646,105 @@
         }
 
         fillForm(data, type) {
-            if (type === 'dni') {
-                this.fields.nombre.value = data.nombres || "";
-                this.fields.apellidoPaterno.value = data.apellido_paterno || "";
-                this.fields.apellidoMaterno.value = data.apellido_materno || "";
-                this.fields.fechaNacimiento.value = data.fecha_nacimiento || "";
-            } else if (type === 'ruc') {
-                this.fields.razonSocial.value = data.razon_social || "";
-                this.fields.nombre.value = "";
-                this.fields.apellidoPaterno.value = "";
-                this.fields.apellidoMaterno.value = "";
-            }
-
-            this.fields.correo.value = data.correo_electronico || "";
-            this.fields.telefono.value = data.telefono || "";
-            this.fields.direccion.value = data.direccion || "";
-            this.fields.codigoPostal.value = data.codigo_postal || "";
-
-            // Llenar campos de ubicación (readonly)
-            if (data.ubicacion_geografica) {
-                this.fields.pais.value = data.ubicacion_geografica.pais || "";
-                this.fields.departamento.value = data.ubicacion_geografica.departamento || "";
-                this.fields.provincia.value = data.ubicacion_geografica.provincia || "";
-                this.fields.distrito.value = data.ubicacion_geografica.distrito || "";
-            }
-            
-            // Llenar tipo de interés
-            if (data.tipo_interes) {
-                const tipoInteresField = document.querySelector('[name="tipoInteres"]');
-                if (tipoInteresField) {
-                    tipoInteresField.value = data.tipo_interes || "";
+            try {
+                if (!data) {
+                    console.error("❌ fillForm recibió data null/undefined");
+                    return;
                 }
+
+                console.log("=== INICIANDO FILL FORM ===");
+                console.log("Tipo:", type);
+                console.log("Data disponible:", !!data);
+                console.log("Has ubicacion_geografica:", !!data.ubicacion_geografica);
+                
+                // Llenar datos personales según tipo de documento
+                if (type === 'dni') {
+                    this.setFieldValue('nombre', data.nombres);
+                    this.setFieldValue('apellidoPaterno', data.apellido_paterno);
+                    this.setFieldValue('apellidoMaterno', data.apellido_materno);
+                    this.setFieldValue('fechaNacimiento', data.fecha_nacimiento);
+                    console.log("Campos DNI llenados");
+                } else if (type === 'ruc') {
+                    this.setFieldValue('razonSocial', data.razon_social);
+                    this.clearFieldValue('nombre');
+                    this.clearFieldValue('apellidoPaterno');
+                    this.clearFieldValue('apellidoMaterno');
+                    console.log("Campos RUC llenados");
+                }
+
+                // Llenar datos comunes
+                this.setFieldValue('correo', data.correo_electronico);
+                this.setFieldValue('telefono', data.telefono);
+                this.setFieldValue('direccion', data.direccion);
+                this.setFieldValue('codigoPostal', data.codigo_postal);
+
+                // Llenar campos de ubicación (readonly) - directo por ID
+                if (data.ubicacion_geografica && typeof data.ubicacion_geografica === 'object') {
+                    console.log("Llenando ubicación");
+                    this.setFieldValueById('pais', data.ubicacion_geografica.pais);
+                    this.setFieldValueById('departamento', data.ubicacion_geografica.departamento);
+                    this.setFieldValueById('provincia', data.ubicacion_geografica.provincia);
+                    this.setFieldValueById('distrito', data.ubicacion_geografica.distrito);
+                } else {
+                    console.warn("⚠️ ubicacion_geografica no disponible o no es objeto");
+                }
+                
+                // Llenar tipo de interés - directo por ID
+                if (data.tipo_interes) {
+                    console.log("Llenando tipo_interes:", data.tipo_interes);
+                    this.setFieldValueById('tipoInteres', data.tipo_interes);
+                } else {
+                    console.warn("⚠️ tipo_interes no disponible");
+                }
+
+                console.log("✅ Formulario completado");
+            } catch (error) {
+                console.error("❌ Error al completar formulario:", error.message);
+                console.error("Stack:", error.stack);
+            }
+        }
+
+        setFieldValue(fieldName, value) {
+            try {
+                const field = this.fields[fieldName];
+                if (field && field instanceof HTMLElement) {
+                    field.value = value || "";
+                    console.log(`  ✓ ${fieldName} = "${value || ''}"`);
+                } else if (!field) {
+                    console.warn(`  ⚠️ Campo ${fieldName} es null/undefined`);
+                } else {
+                    console.warn(`  ⚠️ Campo ${fieldName} no es HTMLElement:`, typeof field);
+                }
+            } catch (error) {
+                console.error(`  ✗ Error en setFieldValue(${fieldName}):`, error.message);
+            }
+        }
+
+        clearFieldValue(fieldName) {
+            try {
+                const field = this.fields[fieldName];
+                if (field && field instanceof HTMLElement) {
+                    field.value = "";
+                    console.log(`  ✓ ${fieldName} limpiado`);
+                }
+            } catch (error) {
+                console.error(`  ✗ Error en clearFieldValue(${fieldName}):`, error.message);
+            }
+        }
+
+        setFieldValueById(elementId, value) {
+            try {
+                const element = document.getElementById(elementId);
+                if (element && element instanceof HTMLElement) {
+                    element.value = value || "";
+                    console.log(`  ✓ #${elementId} = "${value || ''}"`);
+                } else if (!element) {
+                    console.warn(`  ⚠️ Elemento #${elementId} no existe en DOM`);
+                } else {
+                    console.warn(`  ⚠️ #${elementId} no es HTMLElement:`, typeof element);
+                }
+            } catch (error) {
+                console.error(`  ✗ Error en setFieldValueById(${elementId}):`, error.message);
             }
         }
     }
