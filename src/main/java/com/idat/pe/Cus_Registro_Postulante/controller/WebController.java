@@ -2,6 +2,7 @@ package com.idat.pe.Cus_Registro_Postulante.controller;
 
 import com.idat.pe.Cus_Registro_Postulante.dto.RegistroPostulanteDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.Valid;
 
 @Controller
 public class WebController {
@@ -81,18 +84,38 @@ public class WebController {
     }
 
     @PostMapping("/registro/guardar")
-    public String guardar(@ModelAttribute("registroDTO") RegistroPostulanteDTO dto, 
+    public String guardar(@Valid @ModelAttribute("registroDTO") RegistroPostulanteDTO dto, 
                           BindingResult result, 
-                          org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+                          RedirectAttributes redirectAttributes) {
+        
+        // Mostrar errores de validación
         if (result.hasErrors()) {
             return "registro/formulario-registro";
         }
+        
         try {
             com.idat.pe.Cus_Registro_Postulante.dto.PostulanteDTO saved = postulanteService.registrarPostulante(dto);
             redirectAttributes.addFlashAttribute("postulante", saved);
             return "redirect:/registro/exitoso";
+        } catch (DataIntegrityViolationException e) {
+            // Capturar errores de integridad de datos (duplicados, FK violadas)
+            String mensajeError = "Error en los datos enviados";
+            if (e.getMessage().contains("Duplicate entry")) {
+                mensajeError = "Este documento o correo ya se encuentra registrado en el sistema";
+            } else if (e.getMessage().contains("foreign key")) {
+                mensajeError = "Referencia de datos inválida. Verifique los datos ingresados";
+            }
+            redirectAttributes.addFlashAttribute("error", mensajeError);
+            redirectAttributes.addFlashAttribute("registroDTO", dto);
+            return "redirect:/registro";
+        } catch (IllegalArgumentException e) {
+            // Capturar errores de argumentos inválidos (ej: tipo de documento inv valid)
+            redirectAttributes.addFlashAttribute("error", "Datos inválidos: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("registroDTO", dto);
+            return "redirect:/registro";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            // Capturar otros errores
+            redirectAttributes.addFlashAttribute("error", "Error al procesar la solicitud: " + e.getMessage());
             redirectAttributes.addFlashAttribute("registroDTO", dto);
             return "redirect:/registro";
         }
