@@ -214,38 +214,26 @@
                     <!-- ─── Ubicación Geográfica ─── -->
                     <div class="frow frow-2">
                         <div class="fg">
-                            <label>País <span class="req">*</span></label>
-                            <select id="selectPais" class="fi" required>
-                                <option value="">Seleccionar país</option>
-                            </select>
+                            <label>País</label>
+                            <input type="text" th:field="*{pais}" class="fi" placeholder="Perú" id="pais" readonly>
                         </div>
                         <div class="fg">
-                            <label>Departamento <span class="req">*</span></label>
-                            <select id="selectDepartamento" class="fi" required disabled>
-                                <option value="">Seleccionar departamento</option>
-                            </select>
+                            <label>Departamento</label>
+                            <input type="text" th:field="*{departamento}" class="fi" placeholder="Lima" id="departamento" readonly>
                         </div>
                     </div>
                     <div class="frow frow-2">
                         <div class="fg">
-                            <label>Provincia <span class="req">*</span></label>
-                            <select id="selectProvincia" class="fi" required disabled>
-                                <option value="">Seleccionar provincia</option>
-                            </select>
+                            <label>Provincia</label>
+                            <input type="text" th:field="*{provincia}" class="fi" placeholder="Lima" id="provincia" readonly>
                         </div>
                         <div class="fg">
-                            <label>Distrito <span class="req">*</span></label>
-                            <select id="selectDistrito" class="fi" required disabled>
-                                <option value="">Seleccionar distrito</option>
-                            </select>
+                            <label>Distrito</label>
+                            <input type="text" th:field="*{distrito}" class="fi" placeholder="Miraflores" id="distrito" readonly>
                         </div>
                     </div>
                     
-                    <!-- Campos ocultos para enviar con el formulario -->
-                    <input type="hidden" th:field="*{pais}" id="hiddenPais" value="">
-                    <input type="hidden" th:field="*{departamento}" id="hiddenDepartamento" value="">
-                    <input type="hidden" th:field="*{provincia}" id="hiddenProvincia" value="">
-                    <input type="hidden" th:field="*{distrito}" id="hiddenDistrito" value="">
+                    <!-- Campo oculto para idUbicacion -->
                     <input type="hidden" th:field="*{idUbicacion}" id="hiddenIdUbicacion" value="">
                 </div>
 
@@ -614,8 +602,5 @@
 
     document.addEventListener('DOMContentLoaded', () => new RegistrationManager());
 </script>
-
-<!-- Script para carga dinámica de ubicaciones -->
-<script th:src="@{/js/ubicaciones.js}"></script>
 </body>
 </html>
