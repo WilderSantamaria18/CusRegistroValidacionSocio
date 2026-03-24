@@ -640,8 +640,8 @@
                 });
 
                 if (record) {
-                    console.log("\n✅ REGISTRO COMPLETAMENTE ENCONTRADO");
-                    console.log("📌 Llamando fillForm(record, tipo)...");
+                    console.log("\n REGISTRO ENCONTRADO");
+                    console.log(" Llamando fillForm(record, tipo)...");
                     this.fillForm(record, tipo);
                     this.showModal({ 
                         title: "¡Datos Encontrados!", 
@@ -649,12 +649,12 @@
                         type: "alert" 
                     });
                 } else {
-                    console.warn(`\n❌ No se encontró registro para ${tipo} ${numero}`);
+                    console.warn(`\n No se encontró registro para ${tipo} ${numero}`);
                     console.log(`   Números disponibles en ${tipo}:`, recordsArray.map(r => r?.numero_documento).filter(Boolean));
                     throw new Error(`Registro no encontrado`);
                 }
             } catch (error) {
-                console.error("\n❌ ERROR EN VALIDACIÓN:");
+                console.error("\n ERROR EN VALIDACIÓN:");
                 console.error("Message:", error.message);
                 console.error("Name:", error.name);
                 console.error("Stack:", error.stack);
@@ -675,7 +675,7 @@
                 
                 this.showModal({ 
                     title: tituloModal, 
-                    text: mensajeError + "\n\nVerifica la consola (F12) para más detalles.",
+                    text: mensajeError,
                     type: tipoModal 
                 });
             } finally {
@@ -687,7 +687,7 @@
         fillForm(data, type) {
             try {
                 if (!data) {
-                    console.error("❌ fillForm recibió data null/undefined");
+                    console.error(" fillForm recibió data null/undefined");
                     return;
                 }
 
@@ -746,26 +746,26 @@
                         this.setFieldValueById('provincia', prov);
                         this.setFieldValueById('distrito', dist);
                     } else {
-                        console.warn("⚠️ ubicacion_geografica no es un objeto:", data.ubicacion_geografica);
+                        console.warn(" ubicacion_geografica no es un objeto:", data.ubicacion_geografica);
                     }
                 } else {
-                    console.warn("⚠️ ubicacion_geografica NO existe en data");
+                    console.warn(" ubicacion_geografica NO existe en data");
                 }
                 
                 // Llenar tipo de interés - directo por ID
-                console.log("\n⚓ Procesando tipo de interés...");
+                console.log("\n Procesando tipo de interés...");
                 console.log("  tipo_interes existe:", !!data.tipo_interes);
                 
                 if (data.tipo_interes) {
                     console.log("  Valor:", data.tipo_interes);
                     this.setFieldValueById('tipoInteres', data.tipo_interes);
                 } else {
-                    console.warn("⚠️ tipo_interes NO existe en data");
+                    console.warn(" tipo_interes NO existe en data");
                 }
 
-                console.log("\n✅ LLENADO DE FORMULARIO COMPLETADO\n");
+                console.log("\n LLENADO DE FORMULARIO COMPLETADO\n");
             } catch (error) {
-                console.error("\n❌ ERROR CRÍTICO EN fillForm:");
+                console.error("\n ERROR CRÍTICO EN fillForm:");
                 console.error("Message:", error.message);
                 console.error("Stack:", error.stack);
                 console.error("Error completo:", error);
@@ -776,11 +776,11 @@
             try {
                 const field = this.fields[fieldName];
                 if (!field) {
-                    console.warn(`    ⚠️ Campo not found in this.fields: ${fieldName}`);
+                    console.warn(`     Campo not found in this.fields: ${fieldName}`);
                     return;
                 }
                 if (!(field instanceof HTMLElement)) {
-                    console.warn(`    ⚠️ ${fieldName} is not HTMLElement - type: ${typeof field}`);
+                    console.warn(`     ${fieldName} is not HTMLElement - type: ${typeof field}`);
                     return;
                 }
                 field.value = value || "";
